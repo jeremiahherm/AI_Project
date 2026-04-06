@@ -1,9 +1,9 @@
 from smolagents import Tool
 from viator import ViatorAPI
 
-class get_tour_URLs(Tool):
-    name = "get_tour_URLs"
-    description = "Gets a list of tour URLs for a given city and date range."
+class get_tour_info(Tool):
+    name = "get_tour_info"
+    description = "Gets a list of tour information for a given city and date range."
     inputs = {
         "destination_name": {
             "type": "string",
@@ -36,7 +36,12 @@ class get_tour_URLs(Tool):
         
         destination_id = destination_info.get("destinationId")
         tours = api.search_products(destination_id, start_date, end_date)
-        return [tour["productUrl"] for tour in tours]
+        
+        return [{
+                    "title": tour["title"],
+                    "description": tour["description"],
+                    "url": tour["productUrl"]
+                } for tour in tours]
 
 
-get_tour_URLs_tool = get_tour_URLs()
+get_tour_info_tool = get_tour_info()

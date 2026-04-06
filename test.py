@@ -1,5 +1,5 @@
 from viator import ViatorAPI
-from viator_tools import get_tour_URLs_tool
+from viator_tools import get_tour_info_tool
 
 def find_city_destination(data, city_name):
     city_name = city_name.strip().lower()
@@ -19,7 +19,7 @@ def test(city_name):
     
     start_date = "2026-10-10"
     end_date = "2026-10-20"
-    print(get_tour_URLs_tool.forward(destination_name=city_name, start_date=start_date, end_date=end_date))
+    print(get_tour_info_tool.forward(destination_name=city_name, start_date=start_date, end_date=end_date))
     
     # attractions = api.search_products(destination_id = city_destination.get("destinationId"), start_date = start_date, end_date = end_date)
     
