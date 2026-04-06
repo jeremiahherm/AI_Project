@@ -26,7 +26,7 @@ class ViatorAPI:
         response = requests.get(url, headers=self.headers)
         return response.json()
     
-    def search_products(self, destination_id: str, start_date: str, end_date: str, count: int = 5):
+    def search_products(self, destination_id: str, start_date: str, end_date: str, count: int = 10):
         url = f"{self.base_url}/products/search"
         
         body = {
