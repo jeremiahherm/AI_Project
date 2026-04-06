@@ -1,0 +1,32 @@
+from viator import ViatorAPI
+
+def find_city_destination(data, city_name):
+    city_name = city_name.strip().lower()
+
+    for destination in data.get("destinations", []):
+        # print(destination.get("name", "").strip().lower())
+        if destination.get("name", "").strip().lower() == city_name.strip().lower():
+            return destination
+
+    return None
+
+def test(city_name):
+    api = ViatorAPI()
+    
+    destinations = api.get_destinations()
+    city_destination = find_city_destination(destinations, city_name)
+    
+    start_date = "2026-10-10"
+    end_date = "2026-10-20"
+    attractions = api.search_products(destination_id = city_destination.get("destinationId"), start_date = start_date, end_date = end_date)
+    
+    print(len(attractions))
+    print(attractions[0]["productUrl"])
+    # schedule = api.get_product_schedule(attractions[0]["productCode"])
+    # print(schedule)
+    # print(attractions[0]["productCode"])
+    # print(api.get_sorted_attraction_slots(city_destination.get("destinationId"), start_date, end_date))
+
+
+if __name__ == "__main__":
+    test("Paris")
