@@ -1,5 +1,5 @@
 from viator import ViatorAPI
-from viator_tools import get_tour_info_tool
+from viator_tools import get_tour_info_tool, get_crowd_score_tool
 
 def find_city_destination(data, city_name):
     city_name = city_name.strip().lower()
@@ -29,7 +29,8 @@ def test(city_name):
     # print(schedule)
     # print(attractions[0]["productCode"])
     # print(api.get_sorted_attraction_slots(city_destination.get("destinationId"), start_date, end_date))
-    
+    test_review = "The tour in Paris was quite the spectacle, if I do say so myself. The guide was incredibly awful though, I despise him. Do not recommend, disgusting creature."
+    print(get_crowd_score_tool.forward(review_text=test_review))
     
 
 

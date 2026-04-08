@@ -1,5 +1,6 @@
 from smolagents import Tool
 from viator import ViatorAPI
+from transformers import pipeline
 
 class get_tour_info(Tool):
     name = "get_tour_info"
@@ -43,5 +44,30 @@ class get_tour_info(Tool):
                     "url": tour["productUrl"]
                 } for tour in tours]
 
+class get_crowd_score(Tool):
+    name = "get_crowd_score"
+    description = "Reads a review to understand the customers' feelins and returns a sentiment score"
+    inputs = {
+        "review_text": {
+            "type": "string",
+            "description": "The text of the review to analyze."
+        }
+    }
+    output_type = "string"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sentiment_reader = pipeline(
+            "sentiment-analysis",
+            model="tabularisai/multilingual-sentiment-analysis"
+        )
+    
+    def forward(self, review_text: str) -> str:
+        result = self.sentiment_reader(review_text)[0]
+
+        label = result['label']
+        return f"THe crowd sentiment score for this review is: {label}."
+    
 
 get_tour_info_tool = get_tour_info()
+get_crowd_score_tool = get_crowd_score()
