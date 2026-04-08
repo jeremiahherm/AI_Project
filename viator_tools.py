@@ -1,6 +1,7 @@
 from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
+import math
 
 class get_tour_info(Tool):
     name = "get_tour_info"
@@ -46,7 +47,7 @@ class get_tour_info(Tool):
 
 class get_crowd_score(Tool):
     name = "get_crowd_score"
-    description = "Reads a review to understand the customers' feelins and returns a sentiment score"
+    description = "Reads a review to understand the customers' feelings and returns a sentiment score"
     inputs = {
         "review_text": {
             "type": "string",
@@ -61,13 +62,44 @@ class get_crowd_score(Tool):
             "sentiment-analysis",
             model="tabularisai/multilingual-sentiment-analysis"
         )
+        self.sentiment_reader2 = pipeline(
+            "sentiment-analysis",
+            model="eakashyap/product-review-sentiment-analyzer"
+        )
     
     def forward(self, review_text: str) -> str:
-        result = self.sentiment_reader(review_text)[0]
+        result1 = self.sentiment_reader(review_text)[0]
+        result2 = self.sentiment_reader2(review_text)[0]
 
-        label = result['label']
-        return f"THe crowd sentiment score for this review is: {label}."
-    
+        label1 = result1['label']
+        label2 = result2['label']
+        score1 = 0
+        score2 = 0
+        if label1 == 'Very Negative':
+            score1 = 0
+        elif label1 == 'Negative':
+            score1 = 1
+        elif label1 == 'Neutral':
+            score1 = 2
+        elif label1 == 'Positive':
+            score1 = 3
+        elif label1 == 'Very Positive':
+            score1 = 3
+        
+        if label2 == 'Very Negative':
+            score2 = 0
+        elif label2 == 'Negative':
+            score2 = 1
+        elif label2 == 'Neutral':
+            score2 = 2
+        elif label2 == 'Positive':
+            score2 = 3
+        elif label2 == 'Very Positive':
+            score2 = 3
+
+        labels_map = {0: 'Very Negative', 1: 'Negative', 2: 'Neutral', 3: 'Positive', 4: 'Very Positive'}
+        label = math.ceil((score1 + score2)/2)
+        return f"The crowd sentiment score for this review is: {labels_map[label]}."
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
