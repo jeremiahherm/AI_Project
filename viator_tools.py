@@ -64,8 +64,18 @@ class get_crowd_score(Tool):
         )
         self.sentiment_reader2 = pipeline(
             "sentiment-analysis",
-            model="eakashyap/product-review-sentiment-analyzer"
+            model="Krish623/sentiment-model"
         )
+
+        self.score_map = {
+            'Very Negative': 0,
+            'Negative': 1,
+            'Neutral': 2,
+            'Positive': 3,
+            'Very Positive': 4
+        }
+        
+        self.labels_map = {value: text for text, value in self.score_map.items()}
     
     def forward(self, review_text: str) -> str:
         result1 = self.sentiment_reader(review_text)[0]
@@ -73,33 +83,16 @@ class get_crowd_score(Tool):
 
         label1 = result1['label']
         label2 = result2['label']
-        score1 = 0
-        score2 = 0
-        if label1 == 'Very Negative':
-            score1 = 0
-        elif label1 == 'Negative':
-            score1 = 1
-        elif label1 == 'Neutral':
-            score1 = 2
-        elif label1 == 'Positive':
-            score1 = 3
-        elif label1 == 'Very Positive':
-            score1 = 3
         
-        if label2 == 'Very Negative':
-            score2 = 0
-        elif label2 == 'Negative':
-            score2 = 1
-        elif label2 == 'Neutral':
-            score2 = 2
-        elif label2 == 'Positive':
-            score2 = 3
-        elif label2 == 'Very Positive':
-            score2 = 3
+        score1 = self.score_map.get(label1, 2)
+        score2 = self.score_map.get(label2, 2)
 
-        labels_map = {0: 'Very Negative', 1: 'Negative', 2: 'Neutral', 3: 'Positive', 4: 'Very Positive'}
-        label = math.ceil((score1 + score2)/2)
-        return f"The crowd sentiment score for this review is: {labels_map[label]}."
+        average_score = (score1 + score2) / 2
+        final_score = math.ceil(average_score)
+        
+        final_label = self.labels_map.get(final_score, "Unknown")
+
+        return f"The crowd sentiment score for this review is: {final_label}."
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
