@@ -1,0 +1,6 @@
+transformers
+huggingface_hub
+datasets
+accelerate
+litellm[google]
+python-dotenv
