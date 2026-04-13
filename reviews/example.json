@@ -1,0 +1,21 @@
+{"requestMetadata": 
+    {"id": "4d3cf06a-55ce-4854-9c01-36102bc466cd", "status": "ok", "json": "https://files.hasdata.com/4d3cf06a-55ce-4854-9c01-36102bc466cd.json"},
+
+    "reviews": [
+        {"link": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xGeFluSXpNSEJLY2w5alUxRnZSR05oUm0xblQyYxAB!2m1!1s0x0:0x9747b8a4b9c03bc8!3m1!1s2@1:CAIQACodChtycF9oOlFxYnIzMHBKcl9jU1FvRGNhRm1nT2c%7C%7C?hl=en-GB", 
+            "rating": 5, "date": "a month ago", "isoDate": "2026-02-17T19:32:32.154Z", "source": "Google", "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2xGeFluSXpNSEJLY2w5alUxRnZSR05oUm0xblQyYxAB", 
+            "user": {"name": "Vishv N Patel", "contributorId": "111447445919527462137", "link": "https://www.google.com/maps/contrib/111447445919527462137?hl=en-GB", "thumbnail": "https://lh3.googleusercontent.com/a/ACg8ocLalpM_NKjgYWxorvW20eJa19iyV3JuTv5dEfm_sWdeP7BnZg=s120-c-rp-mo-br100", "localGuide": "False", "reviews": 4, "photos": 0}, 
+            "snippet": "Texas A&M University is truly one of the best universities out there. The faculty members and staff are incredibly helpful, supportive, and always willing to guide students whenever needed. The campus facilities are excellent, well-maintained, and designed to support both academic and personal growth.\nThe campus itself is beautiful. Sometimes it honestly feels like you're walking through a little piece of heaven. From the friendly atmosphere to the strong sense of community, Texas A&M has been an amazing place to learn and grow.\nProud to be an Aggie! Howdy"}, 
+        {"link": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21wT1FtZDZZVk55ZUZSNFRrbFpVbmhoVEcxYWNVRRAB!2m1!1s0x0:0x9747b8a4b9c03bc8!3m1!1s2@1:CAIQACodChtycF9oOmpOQmd6YVNyeFR4TklZUnhhTG1acUE%7C%7C?hl=en-GB", 
+            "rating": 5, "date": "5 months ago", "isoDate": "2025-11-04T15:15:04.592Z", "source": "Google", "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT21wT1FtZDZZVk55ZUZSNFRrbFpVbmhoVEcxYWNVRRAB", 
+            "user": {"name": "Rhonda Patterson", "contributorId": "112844663616294991656", "link": "https://www.google.com/maps/contrib/112844663616294991656?hl=en-GB", "thumbnail": "https://lh3.googleusercontent.com/a-/ALV-UjUcxjgVRFNhVF1s7ciKiN8kZAtshFIb3kJM1v_hgJ0y2bBuB6g=s120-c-rp-mo-ba6-br100", "localGuide": "True", "reviews": 550, "photos": 528}, 
+            "snippet": "I took a class to the Gardens. We got a little presentation about the Gardens from Kat. It was awesome. Then we enjoyed walking around the Gardens. What a beautiful and peaceful place to visit. I really enjoyed the swings. This weekend they are having a Fall Festival. I really want to go through the corn maze."}, 
+        {"link": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21kb01GSmtjVlE0WlRWNGNubGpSR1JaTVVOWk1GRRAB!2m1!1s0x0:0x9747b8a4b9c03bc8!3m1!1s2@1:CAIQACodChtycF9oOmdoMFJkcVQ4ZTV4cnljRGRZMUNZMFE%7C%7C?hl=en-GB", 
+            "rating": 5, "date": "5 months ago", "isoDate": "2025-10-15T23:36:56.454Z", "source": "Google", "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT21kb01GSmtjVlE0WlRWNGNubGpSR1JaTVVOWk1GRRAB", 
+            "user": {"name": "Wendy Kimmey", "contributorId": "106339002238629755690", "link": "https://www.google.com/maps/contrib/106339002238629755690?hl=en-GB", "thumbnail": "https://lh3.googleusercontent.com/a/ACg8ocL9fPvfvDgoM96NJTjeZ4M7eY13Gk2bbj2B5FpjL7NxCfCmrw=s120-c-rp-mo-br100", "localGuide": "False", "reviews": 3, "photos": 0}, 
+            "snippet": "The tour guides for high school visits are knowledgeable and engaging. The university has diverse offerings and broad student involvement groups so students have a high potential for success."}
+        ],
+        "placeInfo": {"title": "Texas A&M University", "address": "400 Bizzell St, College Station, TX 77840, United States", "type": "Public university", "rating": 4.4, "reviews": 1098, 
+        "gpsCoordinates": {"latitude": 30.6186625, "longitude": -96.3364251}}, 
+        "pagination": {"nextPageToken": "CAESBkVnSUlDQQ=="}
+}
