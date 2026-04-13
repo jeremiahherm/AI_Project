@@ -1,6 +1,7 @@
 from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
+from smolagents import DuckDuckGoSearchTool
 import math
 
 class get_tour_info(Tool):
@@ -13,11 +14,11 @@ class get_tour_info(Tool):
         },
         "start_date": {
             "type": "string",
-            "description": "The start date for the tour search."
+            "description": "The start date for the tour search in format YYYY-MM-DD."
         },
         "end_date": {
             "type": "string",
-            "description": "The end date for the tour search."
+            "description": "The end date for the tour search in format YYYY-MM-DD."
         }
     }
     output_type = "array"
@@ -94,5 +95,23 @@ class get_crowd_score(Tool):
 
         return f"The crowd sentiment score for this review is: {final_label}."
 
+class SearchTool(Tool):
+    name = "SearchTool"
+    description = "Searches the web for information related to a query."
+    inputs = {
+        "query": {
+            "type": "string",
+            "description": "The search query."
+        }
+    }
+    output_type = "string"
+
+    def forward(self, query: str) -> str:
+        search = DuckDuckGoSearchTool()
+        result = search(query)
+        return result
+    
+
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
+search_tool = SearchTool()
