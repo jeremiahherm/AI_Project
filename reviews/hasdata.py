@@ -10,7 +10,7 @@ search_url = os.getenv("HASDATA_SEARCH_URL")
 
 class HasDataAPI:        
     # STEP 1: Use Google Maps API to get placeId for query
-    def get_place_id(location: str):
+    def get_place_id(self, location: str):
         if location is None or '':
             raise ValueError("Location cannot be empty or None.")
 
@@ -34,7 +34,7 @@ class HasDataAPI:
         return data['placeResults']
 
     # STEP 2: Use Google Maps Reviews API to get 10 reviews ONLY
-    def get_reviews(place_id: str, count: int=10):
+    def get_reviews(self, place_id: str, count: int=5):
         if place_id is None or '':
             raise ValueError("Place ID cannot be empty or None.")
 
@@ -63,6 +63,6 @@ class HasDataAPI:
 # Example usage
 api = HasDataAPI()
 
-location = api.get_place_id("Texas A&M University")
+location = api.get_place_id("ExperienceFirst")
 reviews = api.get_reviews(location['placeId'])
 print(reviews)
