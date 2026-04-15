@@ -96,6 +96,7 @@ class get_crowd_score(Tool):
         final_score = math.ceil(average_score)
         if rating > 0:
             rating = rating - 1
+
         final_calc = (final_score + rating) / 2
         if (math.ceil(final_calc) - final_calc) <= 0.5:
             final_calc = math.ceil(final_calc)
@@ -104,6 +105,40 @@ class get_crowd_score(Tool):
         final_label = self.labels_map.get(final_calc, "Unknown")
 
         return f"The crowd sentiment score for this review is: {final_label}."
+
+class get_value_score(Tool):
+    name = "get_value_score"
+    description = "Reads the price of a tour and compares it to the user reviews to determine if the tour is good value."
+    inputs = {
+        "price": {
+            "type": "number",
+            "description": "The cost of the tour."
+        },
+        "average_sentiment": {
+            "type": "string",
+            "description": "The average sentiment of the user reviews. (e.g., Negative, Neutral, Positive, etc.)"
+        }
+    }
+    output_type = "int"
+
+    def forward(self, price: float, avg_sentiment: int):
+        sentiment_map = {
+            'Very Negative': 0,
+            'Negative': 1,
+            'Neutral': 2,
+            'Positive': 3,
+            'Very Positive': 4
+        }
+        sentiment_rank = sentiment_map.get(avg_sentiment, 2)
+        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)
+        if sentiment_rank >= 4 and price < 100:
+            return 4
+        elif sentiment_rank <= 2 and price > 150:
+            return 1
+        elif sentiment_rank >= 4:
+            return 3
+        else:
+            return 2
 
 class SearchTool(Tool):
     name = "SearchTool"
@@ -124,3 +159,4 @@ class SearchTool(Tool):
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
 search_tool = SearchTool()
+get_value_score_tool = get_value_score()
