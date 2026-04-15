@@ -2,6 +2,7 @@ from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
 from smolagents import DuckDuckGoSearchTool
+from reviews import HasDataAPI
 import math
 
 class get_tour_info(Tool):
@@ -53,6 +54,10 @@ class get_crowd_score(Tool):
         "review_text": {
             "type": "string",
             "description": "The text of the review to analyze."
+        },
+        "rating": {
+            "type": "number",
+            "description": "The number of stars the reviewer gave the experience."
         }
     }
     output_type = "string"
@@ -78,7 +83,7 @@ class get_crowd_score(Tool):
         
         self.labels_map = {value: text for text, value in self.score_map.items()}
     
-    def forward(self, review_text: str) -> str:
+    def forward(self, review_text: str, rating: float) -> str:
         result1 = self.sentiment_reader(review_text)[0]
         result2 = self.sentiment_reader2(review_text)[0]
 
@@ -90,8 +95,14 @@ class get_crowd_score(Tool):
 
         average_score = (score1 + score2) / 2
         final_score = math.ceil(average_score)
-        
-        final_label = self.labels_map.get(final_score, "Unknown")
+        if rating > 0:
+            rating = rating - 1
+        final_calc = (final_score + rating) / 2
+        if (math.ceil(final_calc) - final_calc) <= 0.5:
+            final_calc = math.ceil(final_calc)
+        else:
+            final_calc = math.floor(final_calc)
+        final_label = self.labels_map.get(final_calc, "Unknown")
 
         return f"The crowd sentiment score for this review is: {final_label}."
 
@@ -111,7 +122,33 @@ class SearchTool(Tool):
         result = search(query)
         return result
     
+class ReviewsScraper(Tool):
+    name="ReviewScraper"
+    description="Scrapes reviews for a given location and returns them as a list."
+    inputs = {
+        "location": {
+            "type": "string",
+            "description": "The location to scrape reviews for."
+        },
+        "count": {
+            "type": "integer",
+            "description": "The number of reviews to return. Defaults to 3 if not provided."
+        }
+    }
+
+    def forward(self, location: str, count: int=3) -> list:
+        api = HasDataAPI()
+        place_results = api.get_place_id(location)
+        
+        if not place_results:
+            raise ValueError(f"No place results found for location '{location}'.")
+
+        location = api.get_place_id(location)
+        reviews = api.get_reviews(location['placeId'], count=count)
+        
+        return reviews
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
 search_tool = SearchTool()
+reviews_scraper_tool = ReviewsScraper()
