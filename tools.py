@@ -53,6 +53,10 @@ class get_crowd_score(Tool):
         "review_text": {
             "type": "string",
             "description": "The text of the review to analyze."
+        },
+        "rating": {
+            "type": "number",
+            "description": "The number of stars the reviewer gave the experience."
         }
     }
     output_type = "string"
@@ -78,7 +82,7 @@ class get_crowd_score(Tool):
         
         self.labels_map = {value: text for text, value in self.score_map.items()}
     
-    def forward(self, review_text: str) -> str:
+    def forward(self, review_text: str, rating: float) -> str:
         result1 = self.sentiment_reader(review_text)[0]
         result2 = self.sentiment_reader2(review_text)[0]
 
@@ -90,8 +94,14 @@ class get_crowd_score(Tool):
 
         average_score = (score1 + score2) / 2
         final_score = math.ceil(average_score)
-        
-        final_label = self.labels_map.get(final_score, "Unknown")
+        if rating > 0:
+            rating = rating - 1
+        final_calc = (final_score + rating) / 2
+        if (math.ceil(final_calc) - final_calc) <= 0.5:
+            final_calc = math.ceil(final_calc)
+        else:
+            final_calc = math.floor(final_calc)
+        final_label = self.labels_map.get(final_calc, "Unknown")
 
         return f"The crowd sentiment score for this review is: {final_label}."
 
