@@ -29,7 +29,7 @@ def test(city_name):
     # print(schedule)
     # print(attractions[0]["productCode"])
     # print(api.get_sorted_attraction_slots(city_destination.get("destinationId"), start_date, end_date))
-    test_review = "The tour in Paris was quite the spectacle, if I do say so myself. The guide was incredibly awful though, I despise him. Do not recommend, disgusting creature."
+    test_review = "Incredible tour. I would lay down my life for another chance of going on this life-changing experience."
     print(get_crowd_score_tool.forward(review_text=test_review))
     
 

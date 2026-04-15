@@ -1,6 +1,8 @@
 from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
+from smolagents import DuckDuckGoSearchTool
+import math
 
 class get_tour_info(Tool):
     name = "get_tour_info"
@@ -12,11 +14,11 @@ class get_tour_info(Tool):
         },
         "start_date": {
             "type": "string",
-            "description": "The start date for the tour search."
+            "description": "The start date for the tour search in format YYYY-MM-DD."
         },
         "end_date": {
             "type": "string",
-            "description": "The end date for the tour search."
+            "description": "The end date for the tour search in format YYYY-MM-DD."
         }
     }
     output_type = "array"
@@ -46,7 +48,7 @@ class get_tour_info(Tool):
 
 class get_crowd_score(Tool):
     name = "get_crowd_score"
-    description = "Reads a review to understand the customers' feelins and returns a sentiment score"
+    description = "Reads a review to understand the customers' feelings and returns a sentiment score"
     inputs = {
         "review_text": {
             "type": "string",
@@ -61,13 +63,55 @@ class get_crowd_score(Tool):
             "sentiment-analysis",
             model="tabularisai/multilingual-sentiment-analysis"
         )
+        self.sentiment_reader2 = pipeline(
+            "sentiment-analysis",
+            model="Krish623/sentiment-model"
+        )
+
+        self.score_map = {
+            'Very Negative': 0,
+            'Negative': 1,
+            'Neutral': 2,
+            'Positive': 3,
+            'Very Positive': 4
+        }
+        
+        self.labels_map = {value: text for text, value in self.score_map.items()}
     
     def forward(self, review_text: str) -> str:
-        result = self.sentiment_reader(review_text)[0]
+        result1 = self.sentiment_reader(review_text)[0]
+        result2 = self.sentiment_reader2(review_text)[0]
 
-        label = result['label']
-        return f"THe crowd sentiment score for this review is: {label}."
+        label1 = result1['label']
+        label2 = result2['label']
+        
+        score1 = self.score_map.get(label1, 2)
+        score2 = self.score_map.get(label2, 2)
+
+        average_score = (score1 + score2) / 2
+        final_score = math.ceil(average_score)
+        
+        final_label = self.labels_map.get(final_score, "Unknown")
+
+        return f"The crowd sentiment score for this review is: {final_label}."
+
+class SearchTool(Tool):
+    name = "SearchTool"
+    description = "Searches the web for information related to a query."
+    inputs = {
+        "query": {
+            "type": "string",
+            "description": "The search query."
+        }
+    }
+    output_type = "string"
+
+    def forward(self, query: str) -> str:
+        search = DuckDuckGoSearchTool()
+        result = search(query)
+        return result
     
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
+search_tool = SearchTool()
