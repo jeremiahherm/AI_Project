@@ -56,9 +56,15 @@ class HasDataAPI:
 
         data = response.json()
         reviewsJSON = data.get('reviews', [])
-        snippets = [review.get("snippet", "") for review in reviewsJSON]
+        filtered_reviews = [
+            {
+                "snippet": review.get("snippet", ""),
+                "rating": review.get("rating", None)
+            }
+            for review in reviewsJSON
+        ]
         
-        return snippets
+        return filtered_reviews
        
 
 
