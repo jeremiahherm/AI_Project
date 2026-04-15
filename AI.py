@@ -98,6 +98,8 @@ def run_model(destination_name, start_date, end_date):
     print(f"Company Name: {company_name}")
     print(f"Review 1: {reviews[0]['snippet']}")
     print(f"Rating: {reviews[0]['rating']}")
+    
+    print(get_crowd_score_tool(review_text=reviews[0]['snippet'], rating=reviews[0]['rating']))
 
 
 if __name__ == "__main__":
