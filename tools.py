@@ -2,7 +2,6 @@ from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
 from smolagents import DuckDuckGoSearchTool
-from reviews import HasDataAPI
 import math
 
 class get_tour_info(Tool):
@@ -122,33 +121,33 @@ class SearchTool(Tool):
         result = search(query)
         return result
     
-class ReviewsScraper(Tool):
-    name="ReviewScraper"
-    description="Scrapes reviews for a given location and returns them as a list."
-    inputs = {
-        "location": {
-            "type": "string",
-            "description": "The location to scrape reviews for."
-        },
-        "count": {
-            "type": "integer",
-            "description": "The number of reviews to return. Defaults to 3 if not provided."
-        }
-    }
+# class ReviewsScraper(Tool):
+#     name="ReviewScraper"
+#     description="Scrapes reviews for a given location and returns them as a list."
+#     inputs = {
+#         "location": {
+#             "type": "string",
+#             "description": "The location to scrape reviews for."
+#         },
+#         "count": {
+#             "type": "integer",
+#             "description": "The number of reviews to return. Defaults to 3 if not provided."
+#         }
+#     }
 
-    def forward(self, location: str, count: int=3) -> list:
-        api = HasDataAPI()
-        place_results = api.get_place_id(location)
+#     def forward(self, location: str, count: int=3) -> list:
+#         api = HasDataAPI()
+#         place_results = api.get_place_id(location)
         
-        if not place_results:
-            raise ValueError(f"No place results found for location '{location}'.")
+#         if not place_results:
+#             raise ValueError(f"No place results found for location '{location}'.")
 
-        location = api.get_place_id(location)
-        reviews = api.get_reviews(location['placeId'], count=count)
+#         location = api.get_place_id(location)
+#         reviews = api.get_reviews(location['placeId'], count=count)
         
-        return reviews
+#         return reviews
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
 search_tool = SearchTool()
-reviews_scraper_tool = ReviewsScraper()
+# reviews_scraper_tool = ReviewsScraper()
