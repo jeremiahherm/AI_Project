@@ -2,25 +2,24 @@ import litellm
 from smolagents import LiteLLMModel, CodeAgent, InferenceClientModel
 from openai import OpenAI
 from reviews.hasdata import HasDataAPI
-from tools import get_tour_info_tool, get_crowd_score_tool, search_tool
+from viator import ViatorAPI
+from tools import get_tour_info_tool, get_crowd_score_tool
 import os
 from dotenv import load_dotenv
 import time
-import logging
 import random
 import time
-import ast
-import requests
+import asyncio
 
 def create_agent(model_id):
     model = LiteLLMModel(
         model_id=model_id,
         api_key=os.getenv("OPENAI_API_KEY"),
-        num_retries=3,  # built-in retry
+        num_retries=3,
     )
 
     return CodeAgent(
-        tools=[get_tour_info_tool, get_crowd_score_tool, search_tool],
+        tools=[get_tour_info_tool, get_crowd_score_tool],
         model=model
     )
 
@@ -55,7 +54,37 @@ def run_with_fallback(prompt, max_rounds=3):
                 continue
 
     raise Exception(f"All models failed. Last error: {last_error}")
-    
+
+def process_single_url(product, HD_API):
+    api = ViatorAPI()
+    supplier = api.get_supplier(product["productCode"])
+    print("Supplier:", supplier)
+    company_id = HD_API.get_place_id(supplier)
+    reviews = HD_API.get_reviews(company_id['placeId'])
+
+    first_review = reviews[0]['snippet']
+    first_rating = reviews[0]['rating']
+    crowd_score = get_crowd_score_tool(
+        review_text=first_review,
+        rating=first_rating
+    )
+
+    return {
+        "company_name": supplier,
+        "reviews": first_review,
+        "rating": first_rating,
+        "crowd_score": crowd_score,
+    }
+
+async def process_single_url_async(product, HD_API):
+    return await asyncio.to_thread(process_single_url, product, HD_API)
+
+async def process_all_urls(products, HD_API):
+    tasks = [process_single_url_async(product, HD_API) for product in products]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return results
+
+
 def run_model(destination_name, start_date, end_date):
     load_dotenv()
     HD_API = HasDataAPI()
@@ -72,34 +101,28 @@ def run_model(destination_name, start_date, end_date):
     New Yrok -> New York
     Lnddon, UK -> London
     
-    Output the resulting URLs from the get_tour_info tool for the destination as a list for python, but remove the characters from the url starting at "?mcid" and after.
+    Output the resulting list of JSON objects, from the get_tour_info tool for the destination as a list for python, but remove the characters from the url starting at "?mcid" and after.
     Destination: {destination_name}
     Start Date: {start_date}
     End Date: {end_date}
     """
 
-    urls = run_with_fallback(prompt)
+    products = run_with_fallback(prompt)
     
-    # Make this asynch for all links in urls, but for now just do it for the first one
-    search_prompt = f"""
-    Given the following URL, use the search tool to find the company name of the tour provider.
-    The URL provided takes you to the Viator page for the tour, the company name or LLC can be found on that page.
+    results = asyncio.run(process_all_urls(products, HD_API))
     
-    URL: {urls[0]}
-    
-    Output only the company name or LLC name as a string.
-    """
-    company_name = run_with_fallback(search_prompt)
-    company_id = HD_API.get_place_id(company_name)
-    reviews = HD_API.get_reviews(company_id['placeId'])
-    
-    
-    print(f"URLs: {urls[0]}")
-    print(f"Company Name: {company_name}")
-    print(f"Review 1: {reviews[0]['snippet']}")
-    print(f"Rating: {reviews[0]['rating']}")
-    
-    print(get_crowd_score_tool(review_text=reviews[0]['snippet'], rating=reviews[0]['rating']))
+    num = 1
+    for result in results:
+        if isinstance(result, Exception):
+            print(f"Error: {result}")
+        else:
+            print(f"Result {num}:")
+            print(f"Company Name: {result['company_name']}")
+            print(f"Review: {result['reviews']}")
+            print(f"Rating: {result['rating']}")
+            print(f"Crowd Score: {result['crowd_score']}")
+        print("-" * 40)
+        num += 1
 
 
 if __name__ == "__main__":

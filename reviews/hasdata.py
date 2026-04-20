@@ -66,11 +66,3 @@ class HasDataAPI:
         
         return filtered_reviews
        
-
-
-# Example usage
-# api = HasDataAPI()
-
-# location = api.get_place_id("ExperienceFirst")
-# reviews = api.get_reviews(location['placeId'])
-# print(reviews)

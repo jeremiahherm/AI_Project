@@ -1,8 +1,12 @@
+import os
+import math
+import re
+from tavily import TavilyClient
 from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
-from smolagents import DuckDuckGoSearchTool
-import math
+from smolagents import Tool
+
 
 class get_tour_info(Tool):
     name = "get_tour_info"
@@ -43,7 +47,8 @@ class get_tour_info(Tool):
         return [{
                     "title": tour["title"],
                     "description": tour["description"],
-                    "url": tour["productUrl"]
+                    "url": tour["productUrl"],
+                    "productCode": tour["productCode"]
                 } for tour in tours]
 
 class get_crowd_score(Tool):
@@ -119,7 +124,7 @@ class get_value_score(Tool):
             "description": "The average sentiment of the user reviews. (e.g., Negative, Neutral, Positive, etc.)"
         }
     }
-    output_type = "int"
+    output_type = "integer"
 
     def forward(self, price: float, avg_sentiment: int):
         sentiment_map = {
@@ -140,23 +145,6 @@ class get_value_score(Tool):
         else:
             return 2
 
-class SearchTool(Tool):
-    name = "SearchTool"
-    description = "Searches the web for information related to a query."
-    inputs = {
-        "query": {
-            "type": "string",
-            "description": "The search query."
-        }
-    }
-    output_type = "string"
-
-    def forward(self, query: str) -> str:
-        search = DuckDuckGoSearchTool()
-        result = search(query)
-        return result
-
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
-search_tool = SearchTool()
-get_value_score_tool = get_value_score()
+# get_value_score_tool = get_value_score()
