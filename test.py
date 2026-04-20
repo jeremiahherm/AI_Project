@@ -51,6 +51,7 @@ def test(city_name):
         avg_sentiment = total_sentiment / total_reviews
         price = 10
         print(get_value_score_tool(avg_sentiment, price))
+        print(avg_sentiment)
                 
                 
     except FileNotFoundError:

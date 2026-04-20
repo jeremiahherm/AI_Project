@@ -115,27 +115,27 @@ class get_value_score(Tool):
             "description": "The cost of the tour."
         },
         "average_sentiment": {
-            "type": "string",
-            "description": "The average sentiment of the user reviews. (e.g., Negative, Neutral, Positive, etc.)"
+            "type": "number",
+            "description": "The average sentiment of the user reviews. (e.g., 0 - Very Negative, 1 - Negative, 2 - Neutral, 3 - Positive, 4 - Very Positive)"
         }
     }
     output_type = "integer"
 
-    def forward(self, price: float, average_sentiment: int):
-        sentiment_map = {
-            'Very Negative': 0,
-            'Negative': 1,
-            'Neutral': 2,
-            'Positive': 3,
-            'Very Positive': 4
-        }
-        sentiment_rank = sentiment_map.get(average_sentiment, 2)
+    def forward(self, price: float, average_sentiment: float):
+        #sentiment_map = {
+         #    0: 'Very Negative',
+          #   1: 'Negative',
+           #  2: 'Neutral',
+            # 3: 'Positive',
+            # 4: 'Very Positive'
+        #}
+        #sentiment_rank = sentiment_map.get(average_sentiment, "Unknown")
         # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)
-        if sentiment_rank >= 4 and price < 100:
+        if average_sentiment >= 4 and price < 100:
             return 4
-        elif sentiment_rank <= 2 and price > 150:
+        elif average_sentiment <= 2 and price > 150:
             return 1
-        elif sentiment_rank >= 4:
+        elif average_sentiment >= 3:
             return 3
         else:
             return 2
