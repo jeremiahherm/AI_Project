@@ -1,5 +1,5 @@
 from viator import ViatorAPI
-from tools import get_tour_info_tool, get_crowd_score_tool
+from tools import get_tour_info_tool, get_crowd_score_tool, get_value_score_tool
 import json
 
 def find_city_destination(data, city_name):
