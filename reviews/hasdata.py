@@ -8,9 +8,9 @@ api_key = os.getenv("HASDATA_API_KEY")
 reviews_url = os.getenv("HASDATA_REVIEWS_URL")
 search_url = os.getenv("HASDATA_SEARCH_URL")
 
-class HasDataAPI:        
+class HasDataAPI:
     # STEP 1: Use Google Maps API to get placeId for query
-    def get_place_id(location: str):
+    def get_place_id(self, location: str):
         if location is None or '':
             raise ValueError("Location cannot be empty or None.")
 
@@ -34,7 +34,7 @@ class HasDataAPI:
         return data['placeResults']
 
     # STEP 2: Use Google Maps Reviews API to get 10 reviews ONLY
-    def get_reviews(place_id: str, count: int=10):
+    def get_reviews(self, place_id: str, count: int=3):
         if place_id is None or '':
             raise ValueError("Place ID cannot be empty or None.")
 
@@ -55,14 +55,22 @@ class HasDataAPI:
             raise RuntimeError("Failed to fetch reviews")
 
         data = response.json()
+        reviewsJSON = data.get('reviews', [])
+        filtered_reviews = [
+            {
+                "snippet": review.get("snippet", ""),
+                "rating": review.get("rating", None)
+            }
+            for review in reviewsJSON
+        ]
         
-        return data.get('reviews', [])
+        return filtered_reviews
        
 
 
 # Example usage
-api = HasDataAPI()
+# api = HasDataAPI()
 
-location = api.get_place_id("Texas A&M University")
-reviews = api.get_reviews(location['placeId'])
-print(reviews)
+# location = api.get_place_id("ExperienceFirst")
+# reviews = api.get_reviews(location['placeId'])
+# print(reviews)

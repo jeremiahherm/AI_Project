@@ -1,5 +1,6 @@
 from viator import ViatorAPI
 from tools import get_tour_info_tool, get_crowd_score_tool
+import json
 
 def find_city_destination(data, city_name):
     city_name = city_name.strip().lower()
@@ -29,9 +30,25 @@ def test(city_name):
     # print(schedule)
     # print(attractions[0]["productCode"])
     # print(api.get_sorted_attraction_slots(city_destination.get("destinationId"), start_date, end_date))
-    test_review = "The tour in Paris was quite the spectacle, if I do say so myself. The guide was incredibly awful though, I despise him. Do not recommend, disgusting creature."
-    print(get_crowd_score_tool.forward(review_text=test_review))
-    
+    try:
+        with open('reviews/reviews.txt', 'r', encoding='utf-8') as file:
+            school_reviews = json.load(file)
+        for review in school_reviews:
+            if "snippet" in review:
+                text_to_read = review["snippet"]
+                
+                user_name = review.get("user", {}).get("name", "Unknown User")
+                
+                final_judgment = get_crowd_score_tool.forward(text_to_read, review["rating"])
+                
+                print(f"Review by {user_name}:")
+                print(final_judgment)
+                print("--------------------------------------------------")
+                
+    except FileNotFoundError:
+        print("Couldn't find reviews.txt")
+    except json.JSONDecodeError:
+        print("reviews.txt not formatted properly")
 
 
 if __name__ == "__main__":
