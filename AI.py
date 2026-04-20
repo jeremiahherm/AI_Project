@@ -101,6 +101,19 @@ def run_model(destination_name, start_date, end_date):
     
     print(get_crowd_score_tool(review_text=reviews[0]['snippet'], rating=reviews[0]['rating']))
 
+    tour_prompt = f"""
+    Given the tour information, determine if it is a "tourist trap" based on the value score. Use the crowd score tool to get the crowd score of 
+    every review, obtain the average, and use that to determine the value score by using the get_value_score tool with the price and average
+    crowd score as prompts.
+
+    For example:
+    Value Score: 4 -> Not a tourist trap
+    Value Score: 3 -> Likely not a tourist trap, but expensive
+    Value Score: 2 -> Not a tourist trap, but not the greatest experience
+    Value Score: 1 -> Very likely a tourist trap
+    """
+    print(run_with_fallback(tour_prompt))
+
 
 if __name__ == "__main__":
     run_model("Paris", "2026-10-01", "2026-10-15")

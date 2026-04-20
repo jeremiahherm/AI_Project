@@ -1,5 +1,5 @@
 from viator import ViatorAPI
-from tools import get_tour_info_tool, get_crowd_score_tool
+from tools import get_tour_info_tool, get_crowd_score_tool, get_value_score_tool
 import json
 
 def find_city_destination(data, city_name):
@@ -33,6 +33,8 @@ def test(city_name):
     try:
         with open('reviews/reviews.txt', 'r', encoding='utf-8') as file:
             school_reviews = json.load(file)
+        total_sentiment = 0
+        total_reviews = 0
         for review in school_reviews:
             if "snippet" in review:
                 text_to_read = review["snippet"]
@@ -44,6 +46,12 @@ def test(city_name):
                 print(f"Review by {user_name}:")
                 print(final_judgment)
                 print("--------------------------------------------------")
+                total_sentiment += final_judgment
+                total_reviews += 1
+        avg_sentiment = total_sentiment / total_reviews
+        price = 10
+        print(get_value_score_tool(avg_sentiment, price))
+                
                 
     except FileNotFoundError:
         print("Couldn't find reviews.txt")
