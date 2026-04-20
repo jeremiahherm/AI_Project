@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <title>TourGPT</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="chat-container">
+        <div id="banner" class="banner">
+          <h1>TourGPT</h1>
+        </div>
+        <div id="messagesWrapper" class="messages-wrapper">
+          <div id="messagesContainer" class="messages-container"></div>
+        </div>
+        <div class="input-area">
+          <textarea 
+            id="messageInput" 
+            class="message-input" 
+            placeholder="Type your message..." 
+            rows="1"
+          ></textarea>
+          <button id="sendBtn" class="send-btn">
+            Send
+            <span class="material-symbols-outlined">
+              send
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
