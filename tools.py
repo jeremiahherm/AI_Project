@@ -51,6 +51,8 @@ class get_tour_info(Tool):
                     "productCode": tour["productCode"]
                 } for tour in tours]
 
+# To be used with value score, not final decision. Only used for getting sentiment analysis of user reviews and mapping it to a number. Uses
+# multiple models to do so.
 class get_crowd_score(Tool):
     name = "get_crowd_score"
     description = "Reads a review to understand the customers' feelings and returns a sentiment score"
@@ -111,6 +113,7 @@ class get_crowd_score(Tool):
 
         return final_calc
 
+# IMPORTANT: use this for the decision making, this will be used for the ultimate display and decision of what the best tour available is
 class get_value_score(Tool):
     name = "get_value_score"
     description = "Reads the price of a tour and compares it to the user reviews to determine if the tour is good value on a scale from 1-4 (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)."
@@ -127,24 +130,17 @@ class get_value_score(Tool):
     output_type = "integer"
 
     def forward(self, price: float, average_sentiment: float):
-        #sentiment_map = {
-         #    0: 'Very Negative',
-          #   1: 'Negative',
-           #  2: 'Neutral',
-            # 3: 'Positive',
-            # 4: 'Very Positive'
-        #}
-        #sentiment_rank = sentiment_map.get(average_sentiment, "Unknown")
         # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)
         if average_sentiment >= 4 and price < 100:
             return 4
-        elif average_sentiment <= 2 and price > 150:
+        elif average_sentiment <= 2 and price > 100:
             return 1
         elif average_sentiment >= 3:
             return 3
         else:
             return 2
+        
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
-# get_value_score_tool = get_value_score()
+get_value_score_tool = get_value_score()
