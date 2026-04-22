@@ -48,7 +48,8 @@ class get_tour_info(Tool):
                     "title": tour["title"],
                     "description": tour["description"],
                     "url": tour["productUrl"],
-                    "productCode": tour["productCode"]
+                    "productCode": tour["productCode"],
+                    "price": tour["pricing"]["summary"]["fromPrice"]
                 } for tour in tours]
 
 class get_crowd_score(Tool):
@@ -135,7 +136,8 @@ class get_value_score(Tool):
             # 4: 'Very Positive'
         #}
         #sentiment_rank = sentiment_map.get(average_sentiment, "Unknown")
-        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)
+        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth i
+        
         if average_sentiment >= 4 and price < 100:
             return 4
         elif average_sentiment <= 2 and price > 150:
@@ -147,4 +149,4 @@ class get_value_score(Tool):
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
-# get_value_score_tool = get_value_score()
+get_value_score_tool = get_value_score()

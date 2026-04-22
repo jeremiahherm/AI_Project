@@ -3,7 +3,7 @@ from smolagents import LiteLLMModel, CodeAgent, InferenceClientModel
 from openai import OpenAI
 from reviews.hasdata import HasDataAPI
 from viator import ViatorAPI
-from tools import get_tour_info_tool, get_crowd_score_tool
+from tools import get_tour_info_tool, get_crowd_score_tool, get_value_score_tool
 import os
 from dotenv import load_dotenv
 import time
@@ -19,7 +19,7 @@ def create_agent(model_id):
     )
 
     return CodeAgent(
-        tools=[get_tour_info_tool, get_crowd_score_tool],
+        tools=[get_tour_info_tool, get_crowd_score_tool, get_value_score_tool],
         model=model
     )
 
@@ -58,22 +58,61 @@ def run_with_fallback(prompt, max_rounds=3):
 def process_single_url(product, HD_API):
     api = ViatorAPI()
     supplier = api.get_supplier(product["productCode"])
-    print("Supplier:", supplier)
     company_id = HD_API.get_place_id(supplier)
     reviews = HD_API.get_reviews(company_id['placeId'])
+    
+    description = api.get_description(product["productCode"])
 
-    first_review = reviews[0]['snippet']
-    first_rating = reviews[0]['rating']
-    crowd_score = get_crowd_score_tool(
-        review_text=first_review,
-        rating=first_rating
-    )
-
+    filtered_reviews = [
+        {"snippet": review["snippet"], "rating": review["rating"]}
+        for review in reviews
+    ]
+    
+    crowd_scores = []
+    value_scores = []
+    for review in reviews:
+        try:
+            score = get_crowd_score_tool(
+                review_text=review["snippet"],
+                rating=review["rating"]
+            )
+            crowd_scores.append(score)
+            
+            value = get_value_score_tool(
+                price=product.get("price"),
+                average_sentiment=score
+            )
+            value_scores.append(value)
+        except Exception as e:
+            print(f"Error processing review: {e}")
+            continue
+    
+    value_avg = sum(value_scores) / len(value_scores)
+    
+    prompt = f"""
+    You're a tour review tool that provides an explanation for why a tour has been given a specified score of recommended or not due to it being a tourist trap.
+    
+    The following is how you can interpret a value score:
+    Value Score: 4 -> Not a tourist trap
+    Value Score: 3 -> Likely not a tourist trap, but expensive
+    Value Score: 2 -> Not a tourist trap, but not the greatest experience
+    Value Score: 0-1 -> Very likely a tourist trap
+    
+    Your response should align with the value score. Based on the reviews, make a short 20-30 word response as to why you would or would not recommend this tour:
+    Reviews: {filtered_reviews}
+    Average Value Score: {value_avg}
+    """
+    
+    response = run_with_fallback(prompt)
+    
     return {
         "company_name": supplier,
-        "reviews": first_review,
-        "rating": first_rating,
-        "crowd_score": crowd_score,
+        "tour_name": product["title"],
+        "score": value_avg,
+        "price": product.get("price"),
+        "reasoning": response,
+        "viator_link": product.get("url"),
+        "description": description
     }
 
 async def process_single_url_async(product, HD_API):
@@ -88,8 +127,6 @@ async def process_all_urls(products, HD_API):
 def run_model(destination_name, start_date, end_date):
     load_dotenv()
     HD_API = HasDataAPI()
-    
-    # destination_name = input("Enter the destination name: ")
     
     prompt = f"""
     Take the user input and change it into a city or country name. If there was a typo, correct it into the most likely city or country. 
@@ -111,31 +148,19 @@ def run_model(destination_name, start_date, end_date):
     
     results = asyncio.run(process_all_urls(products, HD_API))
     
-    num = 1
-    for result in results:
+    for i, result in enumerate(results):
         if isinstance(result, Exception):
             print(f"Error: {result}")
         else:
-            print(f"Result {num}:")
+            print(f"Result {i+1}:")
             print(f"Company Name: {result['company_name']}")
-            print(f"Review: {result['reviews']}")
-            print(f"Rating: {result['rating']}")
-            print(f"Crowd Score: {result['crowd_score']}")
+            print(f"Tour Name: {result['tour_name']}")
+            print(f"Pricing: {result.get('price')}")
+            print(f"Score: {result.get('score')}")
+            print(f"Reasoning: {result.get('reasoning')}")
+            print(f"Viator Link: {result.get('viator_link')}")
+            print(f"Description: {result.get('description')}")
         print("-" * 40)
-        num += 1
-
-    tour_prompt = f"""
-    Given the tour information, determine if it is a "tourist trap" based on the value score. Use the crowd score tool to get the crowd score of 
-    every review, obtain the average, and use that to determine the value score by using the get_value_score tool with the price and average
-    crowd score as prompts.
-
-    For example:
-    Value Score: 4 -> Not a tourist trap
-    Value Score: 3 -> Likely not a tourist trap, but expensive
-    Value Score: 2 -> Not a tourist trap, but not the greatest experience
-    Value Score: 1 -> Very likely a tourist trap
-    """
-    print(run_with_fallback(tour_prompt))
 
 
 if __name__ == "__main__":
