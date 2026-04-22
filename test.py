@@ -32,20 +32,32 @@ def test(city_name):
     supplier = api.get_supplier(attractions[0]["productCode"])
     print(supplier)
     # print(api.get_sorted_attraction_slots(city_destination.get("destinationId"), start_date, end_date))
-    # try:
-    #     with open('reviews/reviews.txt', 'r', encoding='utf-8') as file:
-    #         school_reviews = json.load(file)
-    #     for review in school_reviews:
-    #         if "snippet" in review:
-    #             text_to_read = review["snippet"]
+
+    # Testing for review sentiment analysis and overall value of a tour (based on overall sentiment and price)
+    try:
+        with open('reviews/reviews.txt', 'r', encoding='utf-8') as file:
+            school_reviews = json.load(file)
+        total_sentiment = 0
+        total_reviews = 0;
+        for review in school_reviews:
+            if "snippet" in review:
+                text_to_read = review["snippet"]
+            
+                user_name = review.get("user", {}).get("name", "Unknown User")
+               
+                final_judgment = get_crowd_score_tool.forward(text_to_read, review["rating"])
+               
+                print(f"Review by {user_name}:")
+                print(final_judgment)
+                print("--------------------------------------------------")
+                total_sentiment += final_judgment
+                total_reviews += 1
+        avg_sentiment = total_sentiment / total_reviews
+        price = 100
+        print(get_value_score_tool(avg_sentiment, price))
+    except FileNotFoundError:
+        print("Couldn't find reviews.txt")
                 
-    #             user_name = review.get("user", {}).get("name", "Unknown User")
-                
-    #             final_judgment = get_crowd_score_tool.forward(text_to_read, review["rating"])
-                
-    #             print(f"Review by {user_name}:")
-    #             print(final_judgment)
-    #             print("--------------------------------------------------")
                 
     # except FileNotFoundError:
     #     print("Couldn't find reviews.txt")
