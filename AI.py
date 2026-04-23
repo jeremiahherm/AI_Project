@@ -2,25 +2,24 @@ import litellm
 from smolagents import LiteLLMModel, CodeAgent, InferenceClientModel
 from openai import OpenAI
 from reviews.hasdata import HasDataAPI
-from tools import get_tour_info_tool, get_crowd_score_tool, search_tool
+from viator import ViatorAPI
+from tools import get_tour_info_tool, get_crowd_score_tool, get_value_score_tool
 import os
 from dotenv import load_dotenv
 import time
-import logging
 import random
 import time
-import ast
-import requests
+import asyncio
 
 def create_agent(model_id):
     model = LiteLLMModel(
         model_id=model_id,
         api_key=os.getenv("OPENAI_API_KEY"),
-        num_retries=3,  # built-in retry
+        num_retries=3,
     )
 
     return CodeAgent(
-        tools=[get_tour_info_tool, get_crowd_score_tool, search_tool],
+        tools=[get_tour_info_tool, get_crowd_score_tool, get_value_score_tool],
         model=model
     )
 
@@ -55,12 +54,85 @@ def run_with_fallback(prompt, max_rounds=3):
                 continue
 
     raise Exception(f"All models failed. Last error: {last_error}")
+
+def process_single_url(product):
+    reviews = product.get("reviews")
+    supplier = product.get("supplier")
+
+    if isinstance(reviews, Exception):
+        return reviews
+
+    if isinstance(supplier, Exception):
+        return supplier
     
+    api = ViatorAPI()
+    description = api.get_description(product["productCode"])
+
+    filtered_reviews = [
+        {"snippet": review["snippet"], "rating": review["rating"]}
+        for review in product["reviews"]
+    ]
+    
+    crowd_scores = []
+    value_scores = []
+    for review in filtered_reviews:
+        try:
+            score = get_crowd_score_tool(
+                review_text=review["snippet"],
+                rating=review["rating"]
+            )
+            crowd_scores.append(score)
+            
+            value = get_value_score_tool(
+                price=product.get("price"),
+                average_sentiment=score
+            )
+            value_scores.append(value)
+        except Exception as e:
+            print(f"Error processing review: {e}")
+            continue
+    
+    value_avg = sum(value_scores) / len(value_scores)
+    
+    prompt = f"""
+    You're a tour review tool that provides an explanation for why a tour has been given a specified score of recommended or not due to it being a tourist trap.
+    
+    The following is how you can interpret a value score:
+    Value Score: 4 -> Not a tourist trap
+    Value Score: 3 -> Likely not a tourist trap, but expensive
+    Value Score: 2 -> Not a tourist trap, but not the greatest experience
+    Value Score: 0-1 -> Very likely a tourist trap
+    
+    Your response should align with the value score. Based on the reviews, make a short 20-30 word response as to why you would or would not recommend this tour:
+    Reviews: {filtered_reviews}
+    Average Value Score: {value_avg}
+    """
+    
+    response = run_with_fallback(prompt)
+    
+    return {
+        "company_name": supplier,
+        "tour_name": product["title"],
+        "score": value_avg,
+        "price": product.get("price"),
+        "reasoning": response,
+        "viator_link": product.get("url"),
+        "description": description
+    }
+
+async def process_single_url_async(product):
+    return await asyncio.to_thread(process_single_url, product)
+
+async def process_all_urls(products):
+    tasks = [process_single_url_async(product) for product in products]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return results
+
+
 def run_model(destination_name, start_date, end_date):
     load_dotenv()
     HD_API = HasDataAPI()
-    
-    # destination_name = input("Enter the destination name: ")
+    VAPI = ViatorAPI()
     
     prompt = f"""
     Take the user input and change it into a city or country name. If there was a typo, correct it into the most likely city or country. 
@@ -72,34 +144,45 @@ def run_model(destination_name, start_date, end_date):
     New Yrok -> New York
     Lnddon, UK -> London
     
-    Output the resulting URLs from the get_tour_info tool for the destination as a list for python, but remove the characters from the url starting at "?mcid" and after.
+    Output the resulting list of JSON objects, from the get_tour_info tool for the destination as a list for python, but remove the characters from the url starting at "?mcid" and after.
     Destination: {destination_name}
     Start Date: {start_date}
     End Date: {end_date}
     """
 
-    urls = run_with_fallback(prompt)
+    products = run_with_fallback(prompt)
     
-    # Make this asynch for all links in urls, but for now just do it for the first one
-    search_prompt = f"""
-    Given the following URL, use the search tool to find the company name of the tour provider.
-    The URL provided takes you to the Viator page for the tour, the company name or LLC can be found on that page.
+    for i, product in enumerate(products):
+        # print(f"Processing {i+1}")
+        try:
+            supplier = VAPI.get_supplier(product["productCode"])
+            company_id = HD_API.get_place_id(supplier)
+            reviews = HD_API.get_reviews(company_id['placeId'])
+            
+            products[i]["reviews"] = reviews
+            products[i]["supplier"] = supplier
+        except Exception as e:
+            # print(f"Error processing product {product['title']}: {e}")
+            products[i]["reviews"] = e
+            products[i]["supplier"] = e
+            continue
     
-    URL: {urls[0]}
     
-    Output only the company name or LLC name as a string.
-    """
-    company_name = run_with_fallback(search_prompt)
-    company_id = HD_API.get_place_id(company_name)
-    reviews = HD_API.get_reviews(company_id['placeId'])
+    results = asyncio.run(process_all_urls(products))
     
-    
-    print(f"URLs: {urls[0]}")
-    print(f"Company Name: {company_name}")
-    print(f"Review 1: {reviews[0]['snippet']}")
-    print(f"Rating: {reviews[0]['rating']}")
-    
-    print(get_crowd_score_tool(review_text=reviews[0]['snippet'], rating=reviews[0]['rating']))
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            print(f"Error: {result}")
+        else:
+            print(f"Result {i+1}:")
+            print(f"Company Name: {result['company_name']}")
+            print(f"Tour Name: {result['tour_name']}")
+            print(f"Pricing: {result.get('price')}")
+            print(f"Score: {result.get('score')}")
+            print(f"Reasoning: {result.get('reasoning')}")
+            print(f"Viator Link: {result.get('viator_link')}")
+            print(f"Description: {result.get('description')}")
+        print("-" * 40)
 
 
 if __name__ == "__main__":

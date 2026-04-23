@@ -1,8 +1,12 @@
+import os
+import math
+import re
+from tavily import TavilyClient
 from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline
-from smolagents import DuckDuckGoSearchTool
-import math
+from smolagents import Tool
+
 
 class get_tour_info(Tool):
     name = "get_tour_info"
@@ -43,9 +47,13 @@ class get_tour_info(Tool):
         return [{
                     "title": tour["title"],
                     "description": tour["description"],
-                    "url": tour["productUrl"]
+                    "url": tour["productUrl"],
+                    "productCode": tour["productCode"],
+                    "price": tour["pricing"]["summary"]["fromPrice"]
                 } for tour in tours]
 
+# To be used with value score, not final decision. Only used for getting sentiment analysis of user reviews and mapping it to a number. Uses
+# multiple models to do so.
 class get_crowd_score(Tool):
     name = "get_crowd_score"
     description = "Reads a review to understand the customers' feelings and returns a sentiment score"
@@ -59,7 +67,7 @@ class get_crowd_score(Tool):
             "description": "The number of stars the reviewer gave the experience."
         }
     }
-    output_type = "string"
+    output_type = "integer"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,7 +90,7 @@ class get_crowd_score(Tool):
         
         self.labels_map = {value: text for text, value in self.score_map.items()}
     
-    def forward(self, review_text: str, rating: float) -> str:
+    def forward(self, review_text: str, rating: float) -> int:
         result1 = self.sentiment_reader(review_text)[0]
         result2 = self.sentiment_reader2(review_text)[0]
 
@@ -102,61 +110,39 @@ class get_crowd_score(Tool):
             final_calc = math.ceil(final_calc)
         else:
             final_calc = math.floor(final_calc)
-        final_label = self.labels_map.get(final_calc, "Unknown")
+        #final_label = self.labels_map.get(final_calc, "Unknown")
 
-        return f"The crowd sentiment score for this review is: {final_label}."
+        return final_calc
 
+# IMPORTANT: use this for the decision making, this will be used for the ultimate display and decision of what the best tour available is
 class get_value_score(Tool):
     name = "get_value_score"
-    description = "Reads the price of a tour and compares it to the user reviews to determine if the tour is good value."
+    description = "Reads the price of a tour and compares it to the user reviews to determine if the tour is good value on a scale from 1-4 (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)."
     inputs = {
         "price": {
             "type": "number",
             "description": "The cost of the tour."
         },
         "average_sentiment": {
-            "type": "string",
-            "description": "The average sentiment of the user reviews. (e.g., Negative, Neutral, Positive, etc.)"
+            "type": "number",
+            "description": "The average sentiment of the user reviews. (e.g., 0 - Very Negative, 1 - Negative, 2 - Neutral, 3 - Positive, 4 - Very Positive)"
         }
     }
-    output_type = "string"
+    output_type = "integer"
 
-    def forward(self, price: float, average_sentiment: int):
-        sentiment_map = {
-            'Very Negative': 0,
-            'Negative': 1,
-            'Neutral': 2,
-            'Positive': 3,
-            'Very Positive': 4
-        }
-        sentiment_rank = sentiment_map.get(average_sentiment, 2)
-        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)
-        if sentiment_rank >= 4 and price < 100:
+    def forward(self, price: float, average_sentiment: float):
+        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth i
+        
+        if average_sentiment >= 4 and price < 100:
             return 4
-        elif sentiment_rank <= 2 and price > 150:
+        elif average_sentiment <= 2 and price > 100:
             return 1
-        elif sentiment_rank >= 4:
+        elif average_sentiment >= 3:
             return 3
         else:
             return 2
-
-class SearchTool(Tool):
-    name = "SearchTool"
-    description = "Searches the web for information related to a query."
-    inputs = {
-        "query": {
-            "type": "string",
-            "description": "The search query."
-        }
-    }
-    output_type = "string"
-
-    def forward(self, query: str) -> str:
-        search = DuckDuckGoSearchTool()
-        result = search(query)
-        return result
+        
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
-search_tool = SearchTool()
 get_value_score_tool = get_value_score()

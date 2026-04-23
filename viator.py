@@ -26,7 +26,23 @@ class ViatorAPI:
         response = requests.get(url, headers=self.headers)
         return response.json()
     
-    def search_products(self, destination_id: str, start_date: str, end_date: str, count: int = 3):
+    def get_supplier(self, product_code: str):
+        url = f"{self.base_url}/products/{product_code}"
+        
+        response = requests.get(url, headers=self.headers)
+        data = response.json()
+        supplier_info = data.get("supplier", {})
+        return supplier_info["name"]
+    
+    def get_description(self, product_code: str):
+        url = f"{self.base_url}/products/{product_code}"
+        
+        response = requests.get(url, headers=self.headers)
+        data = response.json()
+        return data.get("description")
+        return supplier_info["name"]
+    
+    def search_products(self, destination_id: str, start_date: str, end_date: str, count: int = 5):
         url = f"{self.base_url}/products/search"
         
         body = {
