@@ -51,15 +51,15 @@ def request_tours(body: TourRequest):
     Returns the top tour URL, company name, reviews, and crowd score.
     """
 
-    sample_response = {
-        "tour_name": "New York Sample Tour",
-        "score": 4,
-        "price": 6767,
-        "locations": [{"name": "Sample Location 1"}, {"name": "Sample Location 2"}],
-        "viator_link": "www.viator.com"
-    }
+    # sample_response = {
+    #     "tour_name": "New York Sample Tour",
+    #     "score": 4,
+    #     "price": 6767,
+    #     "locations": [{"name": "Sample Location 1"}, {"name": "Sample Location 2"}],
+    #     "viator_link": "www.viator.com"
+    # }
 
-    return sample_response
+    # return sample_response
 
     try:
         result = run_model(body.destination, str(body.start_date), str(body.end_date))

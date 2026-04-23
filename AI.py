@@ -92,6 +92,9 @@ def process_single_url(product):
             print(f"Error processing review: {e}")
             continue
     
+    if not value_scores:
+        return {"error": "No reviews could be processed for this product"}
+
     value_avg = sum(value_scores) / len(value_scores)
     
     prompt = f"""
@@ -175,15 +178,17 @@ def run_model(destination_name, start_date, end_date):
             print(f"Error: {result}")
         else:
             print(f"Result {i+1}:")
-            print(f"Company Name: {result['company_name']}")
-            print(f"Tour Name: {result['tour_name']}")
-            print(f"Pricing: {result.get('price')}")
-            print(f"Score: {result.get('score')}")
-            print(f"Reasoning: {result.get('reasoning')}")
-            print(f"Viator Link: {result.get('viator_link')}")
-            print(f"Description: {result.get('description')}")
+            print(f"{result}")
+            # print(f"Result {i+1}:")
+            # print(f"Company Name: {result['company_name']}")
+            # print(f"Tour Name: {result['tour_name']}")
+            # print(f"Pricing: {result.get('price')}")
+            # print(f"Score: {result.get('score')}")
+            # print(f"Reasoning: {result.get('reasoning')}")
+            # print(f"Viator Link: {result.get('viator_link')}")
+            # print(f"Description: {result.get('description')}")
         print("-" * 40)
 
 
 if __name__ == "__main__":
-    run_model("Paris", "2026-10-01", "2026-10-15")
+    run_model("New York", "2026-10-01", "2026-10-15")
