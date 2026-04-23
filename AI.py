@@ -55,22 +55,27 @@ def run_with_fallback(prompt, max_rounds=3):
 
     raise Exception(f"All models failed. Last error: {last_error}")
 
-def process_single_url(product, HD_API):
-    api = ViatorAPI()
-    supplier = api.get_supplier(product["productCode"])
-    company_id = HD_API.get_place_id(supplier)
-    reviews = HD_API.get_reviews(company_id['placeId'])
+def process_single_url(product):
+    reviews = product.get("reviews")
+    supplier = product.get("supplier")
+
+    if isinstance(reviews, Exception):
+        return reviews
+
+    if isinstance(supplier, Exception):
+        return supplier
     
+    api = ViatorAPI()
     description = api.get_description(product["productCode"])
 
     filtered_reviews = [
         {"snippet": review["snippet"], "rating": review["rating"]}
-        for review in reviews
+        for review in product["reviews"]
     ]
     
     crowd_scores = []
     value_scores = []
-    for review in reviews:
+    for review in filtered_reviews:
         try:
             score = get_crowd_score_tool(
                 review_text=review["snippet"],
@@ -115,11 +120,11 @@ def process_single_url(product, HD_API):
         "description": description
     }
 
-async def process_single_url_async(product, HD_API):
-    return await asyncio.to_thread(process_single_url, product, HD_API)
+async def process_single_url_async(product):
+    return await asyncio.to_thread(process_single_url, product)
 
-async def process_all_urls(products, HD_API):
-    tasks = [process_single_url_async(product, HD_API) for product in products]
+async def process_all_urls(products):
+    tasks = [process_single_url_async(product) for product in products]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     return results
 
@@ -127,6 +132,7 @@ async def process_all_urls(products, HD_API):
 def run_model(destination_name, start_date, end_date):
     load_dotenv()
     HD_API = HasDataAPI()
+    VAPI = ViatorAPI()
     
     prompt = f"""
     Take the user input and change it into a city or country name. If there was a typo, correct it into the most likely city or country. 
@@ -146,7 +152,23 @@ def run_model(destination_name, start_date, end_date):
 
     products = run_with_fallback(prompt)
     
-    results = asyncio.run(process_all_urls(products, HD_API))
+    for i, product in enumerate(products):
+        # print(f"Processing {i+1}")
+        try:
+            supplier = VAPI.get_supplier(product["productCode"])
+            company_id = HD_API.get_place_id(supplier)
+            reviews = HD_API.get_reviews(company_id['placeId'])
+            
+            products[i]["reviews"] = reviews
+            products[i]["supplier"] = supplier
+        except Exception as e:
+            # print(f"Error processing product {product['title']}: {e}")
+            products[i]["reviews"] = e
+            products[i]["supplier"] = e
+            continue
+    
+    
+    results = asyncio.run(process_all_urls(products))
     
     for i, result in enumerate(results):
         if isinstance(result, Exception):
