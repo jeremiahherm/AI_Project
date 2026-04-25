@@ -5,6 +5,7 @@ from tavily import TavilyClient
 from smolagents import Tool
 from viator import ViatorAPI
 from transformers import pipeline, AutoTokenizer
+import torch
 
 
 class get_tour_info(Tool):
@@ -72,7 +73,6 @@ class get_crowd_score(Tool):
         super().__init__(*args, **kwargs)
         # Models are not loaded here — they load on first call to forward()
         self.sentiment_reader = None
-        self.sentiment_reader2 = None
         self.score_map = {
             'Very Negative': 0,
             'Negative': 1,
@@ -82,40 +82,51 @@ class get_crowd_score(Tool):
         }
         self.labels_map = {value: text for text, value in self.score_map.items()}
 
+    # def _load_models(self):
+    #     if self.sentiment_reader is None:
+    #         self.sentiment_reader = pipeline(
+    #             "sentiment-analysis",
+    #             model="tabularisai/multilingual-sentiment-analysis"
+    #         )
+    #     if self.sentiment_reader2 is None:
+    #         self.sentiment_reader2 = pipeline(
+    #             "sentiment-analysis",
+    #             model="Krish623/sentiment-model",
+    #             use_fast=False,
+    #             device_map=None,        # Added by Hamad - might need to remove
+    #             torch_dtype="auto",     # Added by Hamad - might need to remove
+    #             low_cpu_mem_usage=False # Added by Hamad - might need to remove
+    #         )
+
     def _load_models(self):
         if self.sentiment_reader is None:
             self.sentiment_reader = pipeline(
                 "sentiment-analysis",
-                model="tabularisai/multilingual-sentiment-analysis"
-            )
-        if self.sentiment_reader2 is None:
-            self.sentiment_reader2 = pipeline(
-                "sentiment-analysis",
-                model="Krish623/sentiment-model",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
                 use_fast=False,
-                device_map=None,        # Added by Hamad - might need to remove
-                torch_dtype="auto",     # Added by Hamad - might need to remove
-                low_cpu_mem_usage=False # Added by Hamad - might need to remove
+                device=0 if torch.cuda.is_available() else -1,
             )
 
     def forward(self, review_text: str, rating: float) -> int:
         self._load_models()
 
-        result1 = self.sentiment_reader(review_text)[0]
-        result2 = self.sentiment_reader2(review_text)[0]
+        result = self.sentiment_reader(review_text)[0]
+        label = result['label'].lower()  # normalize to lowercase
+        score = result['score']
+        
+        # Map sentiment label to score (distilbert returns POSITIVE/NEGATIVE)
+        if 'positive' in label:
+            sentiment_score = 3 if score > 0.8 else 2
+        elif 'negative' in label:
+            sentiment_score = 1 if score > 0.8 else 2
+        else:
+            sentiment_score = 2
 
-        label1 = result1['label']
-        label2 = result2['label']
-
-        score1 = self.score_map.get(label1, 2)
-        score2 = self.score_map.get(label2, 2)
-
-        average_score = (score1 + score2) / 2
-        final_score = math.ceil(average_score)
+        # Combine sentiment score with rating
         if rating > 0:
             rating = rating - 1
 
-        final_calc = (final_score + rating) / 2
+        final_calc = (sentiment_score + rating) / 2
         if (math.ceil(final_calc) - final_calc) <= 0.5:
             final_calc = math.ceil(final_calc)
         else:
