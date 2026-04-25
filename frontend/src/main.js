@@ -89,9 +89,18 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const tour = await fetchTourResult(tourRequest);
+    const response = await fetchTourResult(tourRequest);
+    console.log('API response:', response);
     hideTyping();
-    appendMessage('assistant', formatTourCard(tour), true);
+    // Display all tours from the response
+    if (response.error) {
+      appendMessage('assistant', `Error: ${response.error}`);
+      return;
+    }
+
+    response.tours.forEach((tour) => {
+      appendMessage('assistant', formatTourCard(tour), true);
+    });
   } catch (err) {
     hideTyping();
     appendMessage('assistant', `Something went wrong: ${err.message}`);
