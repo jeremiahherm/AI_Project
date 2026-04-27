@@ -58,15 +58,21 @@ def run_with_fallback(prompt, max_rounds=3):
 def process_single_url(product):
     reviews = product.get("reviews")
     supplier = product.get("supplier")
-
-    if isinstance(reviews, Exception):
-        return reviews
-
-    if isinstance(supplier, Exception):
-        return supplier
     
     api = ViatorAPI()
     description = api.get_description(product["productCode"])
+
+    if isinstance(reviews, Exception) or isinstance(supplier, Exception):
+        return {
+            "company_name": supplier,
+            "tour_name": product["title"],
+            "score": 0,
+            "price": product.get("price"),
+            "reasoning": "Could not retrieve reviews for this product.",
+            "viator_link": product.get("url"),
+            "description": description
+        }
+    
 
     filtered_reviews = [
         {"snippet": review["snippet"], "rating": review["rating"]}
@@ -174,25 +180,25 @@ def run_model(destination_name, start_date, end_date):
 
     # only return valid results
     valid_results = [result for result in results if not isinstance(result, Exception)]
+    
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            print(f"Error: {result}")
+        else:
+            print(f"Result {i+1}:")
+            print(f"{result}")
+            # print(f"Result {i+1}:")
+            # print(f"Company Name: {result['company_name']}")
+            # print(f"Tour Name: {result['tour_name']}")
+            # print(f"Pricing: {result.get('price')}")
+            # print(f"Score: {result.get('score')}")
+            # print(f"Reasoning: {result.get('reasoning')}")
+            # print(f"Viator Link: {result.get('viator_link')}")
+            # print(f"Description: {result.get('description')}")
+        print("-" * 40)
 
     print(f"Successfully processed {len(valid_results)} out of {len(products)} products.")
     return valid_results
-    
-    # for i, result in enumerate(results):
-    #     if isinstance(result, Exception):
-    #         print(f"Error: {result}")
-    #     else:
-    #         print(f"Result {i+1}:")
-    #         print(f"{result}")
-    #         # print(f"Result {i+1}:")
-    #         # print(f"Company Name: {result['company_name']}")
-    #         # print(f"Tour Name: {result['tour_name']}")
-    #         # print(f"Pricing: {result.get('price')}")
-    #         # print(f"Score: {result.get('score')}")
-    #         # print(f"Reasoning: {result.get('reasoning')}")
-    #         # print(f"Viator Link: {result.get('viator_link')}")
-    #         # print(f"Description: {result.get('description')}")
-    #     print("-" * 40)
 
     
 
