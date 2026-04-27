@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <title>TourGPT</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="chat-container">
+        <div id="banner" class="banner">
+          <h1>TourGPT</h1>
+        </div>
+        <div id="messagesWrapper" class="messages-wrapper">
+          <div id="messagesContainer" class="messages-container">
+            <div class="message assistant">
+              <div class="msg-avatar">A</div>
+              <div class="msg-body">
+                <div class="msg-content plain">
+                  <p>
+                    Hello! I am TourGPT, your AI travel assistant. I'm here to help you find the best tours based on your destination and travel dates!
+                  </p>
+                  <p>
+                    To get started, simply type your request in the following format:
+                  </p>
+                  <p><em>City, YYYY-MM-DD to YYYY-MM-DD</em></p>
+                  <p>
+                    <strong>Example:</strong> <em>Paris, 2026-10-01 to 2026-10-15</em>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="input-area">
+          <textarea 
+            id="messageInput" 
+            class="message-input" 
+            placeholder="Type your message..." 
+            rows="1"
+          ></textarea>
+          <button id="sendBtn" class="send-btn">
+            Send
+            <i class="fa fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

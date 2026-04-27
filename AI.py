@@ -92,7 +92,9 @@ def process_single_url(product):
             print(f"Error processing review: {e}")
             continue
     
-    value_avg = sum(value_scores) / len(value_scores)
+    # Use average of what we could process, or default to 2.5 if nothing worked
+    if value_scores:
+        value_avg = sum(value_scores) / len(value_scores)
     
     prompt = f"""
     You're a tour review tool that provides an explanation for why a tour has been given a specified score of recommended or not due to it being a tourist trap.
@@ -169,21 +171,31 @@ def run_model(destination_name, start_date, end_date):
     
     
     results = asyncio.run(process_all_urls(products))
+
+    # only return valid results
+    valid_results = [result for result in results if not isinstance(result, Exception)]
+
+    print(f"Successfully processed {len(valid_results)} out of {len(products)} products.")
+    return valid_results
     
-    for i, result in enumerate(results):
-        if isinstance(result, Exception):
-            print(f"Error: {result}")
-        else:
-            print(f"Result {i+1}:")
-            print(f"Company Name: {result['company_name']}")
-            print(f"Tour Name: {result['tour_name']}")
-            print(f"Pricing: {result.get('price')}")
-            print(f"Score: {result.get('score')}")
-            print(f"Reasoning: {result.get('reasoning')}")
-            print(f"Viator Link: {result.get('viator_link')}")
-            print(f"Description: {result.get('description')}")
-        print("-" * 40)
+    # for i, result in enumerate(results):
+    #     if isinstance(result, Exception):
+    #         print(f"Error: {result}")
+    #     else:
+    #         print(f"Result {i+1}:")
+    #         print(f"{result}")
+    #         # print(f"Result {i+1}:")
+    #         # print(f"Company Name: {result['company_name']}")
+    #         # print(f"Tour Name: {result['tour_name']}")
+    #         # print(f"Pricing: {result.get('price')}")
+    #         # print(f"Score: {result.get('score')}")
+    #         # print(f"Reasoning: {result.get('reasoning')}")
+    #         # print(f"Viator Link: {result.get('viator_link')}")
+    #         # print(f"Description: {result.get('description')}")
+    #     print("-" * 40)
+
+    
 
 
 if __name__ == "__main__":
-    run_model("Paris", "2026-10-01", "2026-10-15")
+    run_model("New York", "2026-10-01", "2026-10-15")

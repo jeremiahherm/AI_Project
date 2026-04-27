@@ -4,8 +4,8 @@ import re
 from tavily import TavilyClient
 from smolagents import Tool
 from viator import ViatorAPI
-from transformers import pipeline
-from smolagents import Tool
+from transformers import pipeline, AutoTokenizer
+import torch
 
 
 class get_tour_info(Tool):
@@ -26,12 +26,12 @@ class get_tour_info(Tool):
         }
     }
     output_type = "array"
-    
+
     def forward(self, destination_name: str, start_date: str, end_date: str) -> list:
         api = ViatorAPI()
         data = api.get_destinations()
         destination_name = destination_name.strip().lower()
-        
+
         destination_info = None
 
         for destination in data.get("destinations", []):
@@ -40,17 +40,17 @@ class get_tour_info(Tool):
                 break
         if not destination_info:
             raise ValueError(f"Destination '{destination_name}' not found.")
-        
+
         destination_id = destination_info.get("destinationId")
         tours = api.search_products(destination_id, start_date, end_date)
-        
+
         return [{
-                    "title": tour["title"],
-                    "description": tour["description"],
-                    "url": tour["productUrl"],
-                    "productCode": tour["productCode"],
-                    "price": tour["pricing"]["summary"]["fromPrice"]
-                } for tour in tours]
+            "title": tour["title"],
+            "description": tour["description"],
+            "url": tour["productUrl"],
+            "productCode": tour["productCode"],
+            "price": tour["pricing"]["summary"]["fromPrice"]
+        } for tour in tours]
 
 # To be used with value score, not final decision. Only used for getting sentiment analysis of user reviews and mapping it to a number. Uses
 # multiple models to do so.
@@ -71,15 +71,8 @@ class get_crowd_score(Tool):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.sentiment_reader = pipeline(
-            "sentiment-analysis",
-            model="tabularisai/multilingual-sentiment-analysis"
-        )
-        self.sentiment_reader2 = pipeline(
-            "sentiment-analysis",
-            model="Krish623/sentiment-model"
-        )
-
+        # Models are not loaded here — they load on first call to forward()
+        self.sentiment_reader = None
         self.score_map = {
             'Very Negative': 0,
             'Negative': 1,
@@ -87,32 +80,60 @@ class get_crowd_score(Tool):
             'Positive': 3,
             'Very Positive': 4
         }
-        
         self.labels_map = {value: text for text, value in self.score_map.items()}
-    
+
+    # def _load_models(self):
+    #     if self.sentiment_reader is None:
+    #         self.sentiment_reader = pipeline(
+    #             "sentiment-analysis",
+    #             model="tabularisai/multilingual-sentiment-analysis"
+    #         )
+    #     if self.sentiment_reader2 is None:
+    #         self.sentiment_reader2 = pipeline(
+    #             "sentiment-analysis",
+    #             model="Krish623/sentiment-model",
+    #             use_fast=False,
+    #             device_map=None,        # Added by Hamad - might need to remove
+    #             torch_dtype="auto",     # Added by Hamad - might need to remove
+    #             low_cpu_mem_usage=False # Added by Hamad - might need to remove
+    #         )
+
+    def _load_models(self):
+        if self.sentiment_reader is None:
+            self.sentiment_reader = pipeline(
+                "sentiment-analysis",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
+                use_fast=False,
+                device=0 if torch.cuda.is_available() else -1,
+            )
+
     def forward(self, review_text: str, rating: float) -> int:
-        result1 = self.sentiment_reader(review_text)[0]
-        result2 = self.sentiment_reader2(review_text)[0]
+        self._load_models()
 
-        label1 = result1['label']
-        label2 = result2['label']
+        result = self.sentiment_reader(review_text)[0]
+        label = result['label'].lower()  # normalize to lowercase
+        score = result['score']
         
-        score1 = self.score_map.get(label1, 2)
-        score2 = self.score_map.get(label2, 2)
+        # Map sentiment label to score (distilbert returns POSITIVE/NEGATIVE)
+        if 'positive' in label:
+            sentiment_score = 3 if score > 0.8 else 2
+        elif 'negative' in label:
+            sentiment_score = 1 if score > 0.8 else 2
+        else:
+            sentiment_score = 2
 
-        average_score = (score1 + score2) / 2
-        final_score = math.ceil(average_score)
+        # Combine sentiment score with rating
         if rating > 0:
             rating = rating - 1
 
-        final_calc = (final_score + rating) / 2
+        final_calc = (sentiment_score + rating) / 2
         if (math.ceil(final_calc) - final_calc) <= 0.5:
             final_calc = math.ceil(final_calc)
         else:
             final_calc = math.floor(final_calc)
-        #final_label = self.labels_map.get(final_calc, "Unknown")
 
         return final_calc
+
 
 # IMPORTANT: use this for the decision making, this will be used for the ultimate display and decision of what the best tour available is
 class get_value_score(Tool):
@@ -131,8 +152,7 @@ class get_value_score(Tool):
     output_type = "integer"
 
     def forward(self, price: float, average_sentiment: float):
-        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth i
-        
+        # return the value score (1 - not worth it, 2 - get what you're paying, 3 - Worth the money, 4 - Great value and worth it)
         if average_sentiment >= 4 and price < 100:
             return 4
         elif average_sentiment <= 2 and price > 100:
@@ -141,7 +161,7 @@ class get_value_score(Tool):
             return 3
         else:
             return 2
-        
+
 
 get_tour_info_tool = get_tour_info()
 get_crowd_score_tool = get_crowd_score()
