@@ -93,7 +93,12 @@ def request_tours(body: TourRequest):
                 return {"error": "No tours found for the given destination and date range."}
 
             save_tours(destination, start_date, end_date, results)
-            return {"tours": results}        
+            return {"tours": [{
+                "destination": destination,
+                "start_date": start_date,
+                "end_date": end_date,
+                "reviews": results
+            }]}        
     except Exception as e:
         return {"error": str(e)}
 
