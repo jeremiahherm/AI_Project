@@ -4,3 +4,5 @@ datasets
 accelerate
 litellm[google]
 python-dotenv
+tf-keras
+tavily-python
