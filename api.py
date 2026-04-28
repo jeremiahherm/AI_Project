@@ -92,6 +92,10 @@ def request_tours(body: TourRequest):
                 raise ValueError("No tours found for the given destination and date range.")
                 return {"error": "No tours found for the given destination and date range."}
 
+            print('*' * 20)
+            print("Trying to save tour results: ")
+            print(results)
+
             save_tours(destination, start_date, end_date, results)
             return {"tours": [{
                 "destination": destination,

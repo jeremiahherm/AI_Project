@@ -64,7 +64,7 @@ def process_single_url(product):
 
     if isinstance(reviews, Exception) or isinstance(supplier, Exception):
         return {
-            "company_name": supplier,
+            "company_name": "Unknown",
             "tour_name": product["title"],
             "score": 0,
             "price": product.get("price"),
@@ -101,6 +101,8 @@ def process_single_url(product):
     # Use average of what we could process, or default to 2.5 if nothing worked
     if value_scores:
         value_avg = sum(value_scores) / len(value_scores)
+    else:
+        value_avg = 0.0
     
     prompt = f"""
     You're a tour review tool that provides an explanation for why a tour has been given a specified score of recommended or not due to it being a tourist trap.
@@ -135,6 +137,41 @@ async def process_all_urls(products):
     tasks = [process_single_url_async(product) for product in products]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     return results
+
+
+def handle_error_results(results, products):
+    """
+    Replace Exception results with fallback objects containing 'Unknown' strings.
+    This allows all results to be saved to the database.
+    
+    Args:
+        results: List of results (may contain Exception objects)
+        products: Original list of products with metadata
+    
+    Returns:
+        List of result dictionaries with no Exception objects
+    """
+    handled_results = []
+    
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            # Create a fallback result with available product info and 'Unknown' for failed fields
+            product = products[i] if i < len(products) else {}
+            fallback_result = {
+                "company_name": "Unknown" if str(product.get("company_name", "")).startswith("KeyError") else product.get("company_name", "Unknown"),
+                "tour_name": product.get("title", "Unknown"),
+                "score": product.get("score", 0),
+                "price": product.get("price", 0.0),
+                "reasoning": f"Error processing tour: {str(result)}",
+                "viator_link": product.get("url", "Unknown"),
+                "description": "Unknown"
+            }
+            handled_results.append(fallback_result)
+        else:
+            # Valid result, keep as is
+            handled_results.append(result)
+    
+    return handled_results
 
 
 def run_model(destination_name, start_date, end_date):
@@ -178,25 +215,13 @@ def run_model(destination_name, start_date, end_date):
     
     results = asyncio.run(process_all_urls(products))
 
-    # only return valid results
-    valid_results = [result for result in results if not isinstance(result, Exception)]
+    # Replace exceptions with fallback results containing 'Unknown' strings
+    valid_results = handle_error_results(results, products)
     
-    for i, result in enumerate(results):
-        if isinstance(result, Exception):
-            print(f"Error: {result}")
-        else:
-            print(f"Result {i+1}:")
-            print(f"{result}")
-            # print(f"Result {i+1}:")
-            # print(f"Company Name: {result['company_name']}")
-            # print(f"Tour Name: {result['tour_name']}")
-            # print(f"Pricing: {result.get('price')}")
-            # print(f"Score: {result.get('score')}")
-            # print(f"Reasoning: {result.get('reasoning')}")
-            # print(f"Viator Link: {result.get('viator_link')}")
-            # print(f"Description: {result.get('description')}")
-        print("-" * 40)
-
+    # for i, result in enumerate(valid_results):
+    #     print(f"Result {i+1}:")
+    #     print(f"{result}")
+    print(valid_results)
     print(f"Successfully processed {len(valid_results)} out of {len(products)} products.")
     return valid_results
 
